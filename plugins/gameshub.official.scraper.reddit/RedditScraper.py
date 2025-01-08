@@ -46,9 +46,7 @@ def get_game_record_from_db(source_url):
     if db.is_closed():
         db.connect()
     game = GameRecord.select().where(GameRecord.source_url == source_url)
-    if len(game) != 0:
-        return game
-    return None
+    return game if len(game) != 0 else None
 
 
 class Config:
@@ -64,7 +62,9 @@ def process_free_game_information(game_url, source_url):
     if not game_url.startswith("https://store.steampowered.com/app/"):
         return
     app_id = game_url.split('/')[4]
-    response = requests.get('https://store.steampowered.com/api/appdetails?appids=' + app_id)
+    response = requests.get(
+        f'https://store.steampowered.com/api/appdetails?appids={app_id}'
+    )
     response_json = response.json()
     if app_id in response_json and 'success' in response_json[app_id] and response_json[app_id]['success']:
         data = response_json[app_id]['data']
@@ -79,13 +79,31 @@ def process_free_game_information(game_url, source_url):
                             sub_id = str(sub['packageid'])
                             break
         if sub_id == '':
-            notify(__name__, GamePlatform.STEAM, data['name'], app_id,
-                   "https://store.steampowered.com/app/" + app_id, GameFreeType.KEEP_FOREVER,
-                   None, None, source_url, "!addlicense asf a/" + app_id)
+            notify(
+                __name__,
+                GamePlatform.STEAM,
+                data['name'],
+                app_id,
+                f"https://store.steampowered.com/app/{app_id}",
+                GameFreeType.KEEP_FOREVER,
+                None,
+                None,
+                source_url,
+                f"!addlicense asf a/{app_id}",
+            )
         else:
-            notify(__name__, GamePlatform.STEAM, data['name'], sub_id,
-                   "https://store.steampowered.com/app/" + app_id, GameFreeType.KEEP_FOREVER,
-                   None, None, source_url, "!addlicense asf s/" + sub_id)
+            notify(
+                __name__,
+                GamePlatform.STEAM,
+                data['name'],
+                sub_id,
+                f"https://store.steampowered.com/app/{app_id}",
+                GameFreeType.KEEP_FOREVER,
+                None,
+                None,
+                source_url,
+                f"!addlicense asf s/{sub_id}",
+            )
         save_game_records_to_db([GameRecord(game_id=app_id, source_url=source_url)])
 
 

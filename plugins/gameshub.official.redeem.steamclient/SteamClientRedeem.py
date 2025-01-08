@@ -46,12 +46,18 @@ def get_available_game_record_from_db():
     if db.is_closed():
         db.connect()
     games = GameRecord.select()
-    correct_games = []
-    for game in games:
-        if (game.start_time is None or game.start_time < datetime.datetime.utcnow() + datetime.timedelta(minutes=60)) \
-                and (game.end_time is None or game.end_time > datetime.datetime.utcnow()):
-            correct_games.append(game)
-    if len(correct_games) != 0:
+    if correct_games := [
+        game
+        for game in games
+        if (
+            game.start_time is None
+            or game.start_time
+            < datetime.datetime.utcnow() + datetime.timedelta(minutes=60)
+        )
+        and (
+            game.end_time is None or game.end_time > datetime.datetime.utcnow()
+        )
+    ]:
         return correct_games
     return None
 
@@ -117,16 +123,18 @@ for account in config.accounts:
     if 'secrets' in account:
         steam_authenticator = SteamAuthenticator(account['secrets'])
     if steam_authenticator:
-        logger.info("Logging in steam account %s with SteamGuard code" % account['username'])
+        logger.info(
+            f"Logging in steam account {account['username']} with SteamGuard code"
+        )
         if client.login(account['username'], account['password'], two_factor_code=steam_authenticator.get_code()) != 1:
             raise Exception("Failed to login to Steam with 2fa code")
     else:
-        logger.info("Logging in steam account %s" % account['username'])
+        logger.info(f"Logging in steam account {account['username']}")
         if client.cli_login(username=account['username'], password=account['password']) != 1:
             raise Exception("Failed to login to Steam with username and password")
-    logger.info("Login to steam account %s successfully" % account['username'])
+    logger.info(f"Login to steam account {account['username']} successfully")
     steam_clients.append(client)
-if len(steam_clients) == 0:
+if not steam_clients:
     raise Exception("No steam account configured")
 
 

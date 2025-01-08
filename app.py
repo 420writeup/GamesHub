@@ -73,7 +73,7 @@ def check_update():
 
 
 def print_help():
-    print("Usage: python %s [options]" % os.path.basename(__file__))
+    print(f"Usage: python {os.path.basename(__file__)} [options]")
     print("Options:")
     print("  -h, --help\t\t\tPrint this help message")
     print("  -c, --check-update\t\tCheck for update")
@@ -99,7 +99,7 @@ def main(argv):
     logger.info(center_format_text())
     logger.info(center_format_text(PROJECT_NAME))
     logger.info(center_format_text("Author: lupohan44"))
-    logger.info(center_format_text("Version: %s" % VERSION))
+    logger.info(center_format_text(f"Version: {VERSION}"))
     logger.info(center_format_text())
     enabled_plugins = parse_config()
     if config.update_checking.enable:
@@ -108,18 +108,19 @@ def main(argv):
         raise Exception(NO_PLUGINS_ENABLE_ERROR_MSG)
     if not os.path.exists('plugins'):
         raise Exception(NO_PLUGINS_FOLDER_ERROR_MSG)
-    # try to enable plugins
-    folders_under_plugins = []
-    for dirs in os.listdir("plugins"):
-        if os.path.isdir(os.path.join("plugins", dirs)):
-            folders_under_plugins.append(dirs)
-    if len(folders_under_plugins) == 0:
+    folders_under_plugins = [
+        dirs
+        for dirs in os.listdir("plugins")
+        if os.path.isdir(os.path.join("plugins", dirs))
+    ]
+    if not folders_under_plugins:
         raise Exception(PLUGINS_FOLDER_EMPTY_ERROR_MSG)
-    enabled_plugins_folders = []
-    for plugin_name in enabled_plugins:
-        if plugin_name in folders_under_plugins:
-            enabled_plugins_folders.append(os.path.join("plugins", plugin_name))
-    if len(enabled_plugins_folders) == 0:
+    enabled_plugins_folders = [
+        os.path.join("plugins", plugin_name)
+        for plugin_name in enabled_plugins
+        if plugin_name in folders_under_plugins
+    ]
+    if not enabled_plugins_folders:
         raise Exception(NO_PLUGINS_ENABLE_ERROR_MSG)
     total_plugin_count = 0
     for finder, name, _ in pkgutil.iter_modules(enabled_plugins_folders):

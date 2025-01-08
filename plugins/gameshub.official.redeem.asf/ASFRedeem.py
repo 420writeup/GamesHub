@@ -48,12 +48,18 @@ def get_available_game_record_from_db():
     if db.is_closed():
         db.connect()
     games = GameRecord.select()
-    correct_games = []
-    for game in games:
-        if (game.start_time is None or game.start_time < datetime.datetime.utcnow() + datetime.timedelta(minutes=60)) \
-                and (game.end_time is None or game.end_time > datetime.datetime.utcnow()):
-            correct_games.append(game)
-    if len(correct_games) != 0:
+    if correct_games := [
+        game
+        for game in games
+        if (
+            game.start_time is None
+            or game.start_time
+            < datetime.datetime.utcnow() + datetime.timedelta(minutes=60)
+        )
+        and (
+            game.end_time is None or game.end_time > datetime.datetime.utcnow()
+        )
+    ]:
         return correct_games
     return None
 
@@ -138,16 +144,18 @@ def redeem_games():
         for game in games:
             games_id_raw.append(game.sub_id)
             try:
-                response = requests.get('https://store.steampowered.com/api/appdetails?appids=' + game.sub_id)
+                response = requests.get(
+                    f'https://store.steampowered.com/api/appdetails?appids={game.sub_id}'
+                )
                 response_json = response.json()
                 if game.sub_id in response_json and 'success' in response_json[game.sub_id] and \
                         response_json[game.sub_id]['success']:
-                    games_id.append('a/' + game.sub_id)
+                    games_id.append(f'a/{game.sub_id}')
                 else:
-                    games_id.append('s/' + game.sub_id)
+                    games_id.append(f's/{game.sub_id}')
             except Exception as e:
                 logger.error(e)
-                games_id.append('s/' + game.sub_id)
+                games_id.append(f's/{game.sub_id}')
             logger.info(REDEEM_GAME_MSG % (game.game_name, game.sub_id))
         cmd = config.redeem_command.format(game_ids=",".join(games_id))
         asyncio.run(command(cmd))

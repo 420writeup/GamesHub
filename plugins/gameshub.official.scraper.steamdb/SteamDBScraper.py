@@ -53,9 +53,7 @@ def get_game_record_from_db(game_name, start_time, end_time):
         db.connect()
     game = GameRecord.select().where(GameRecord.game_name == game_name and GameRecord.start_time == start_time
                                      and GameRecord.end_time == end_time)
-    if len(game) != 0:
-        return game
-    return None
+    return game if len(game) != 0 else None
 
 
 class LogSetting:
@@ -78,9 +76,7 @@ def get_url_single(url, headers=None, decode='utf-8'):
     req = request.Request(url, headers=http_header)
     response = request.urlopen(req)
     html = response.read().decode(decode)
-    soup = BeautifulSoup(html, 'lxml')
-
-    return soup
+    return BeautifulSoup(html, 'lxml')
 
 
 def playwright_get_url(url, delay=0, browser="webkit", headless=True):
@@ -112,9 +108,9 @@ def playwright_get_url(url, delay=0, browser="webkit", headless=True):
 
 
 def process_steamdb_result(steamdb_result):
-    game_records = list([])
-    telegram_push_message = list([])
-    asf_redeem_list = list([])
+    game_records = []
+    telegram_push_message = []
+    asf_redeem_list = []
 
     # go through all the free games
     for each_tr in steamdb_result.select(".app"):
@@ -130,7 +126,7 @@ def process_steamdb_result(steamdb_result):
         if len(tds[tds_length - 3].contents) == 1:
             free_type = tds[tds_length - 3].contents[0]
         else:
-            free_type = tds[tds_length - 3].contents[2].contents[0] + "Forever"
+            free_type = f"{tds[tds_length - 3].contents[2].contents[0]}Forever"
         start_time_str = str(tds[tds_length - 2].get("data-time"))
         end_time_str = str(tds[tds_length - 1].get("data-time"))
         steamdb_url = urljoin(STEAM_DB_FREE_GAMES_URL, str(tds[tds_length - 5].contents[1].get("href")))
@@ -148,7 +144,7 @@ def process_steamdb_result(steamdb_result):
         steam_url = str(tds[tds_length - 6].contents[1].get('href')).split("?")[0]
         '''get basic info end'''
 
-        logger.info("Found free game: " + game_name)
+        logger.info(f"Found free game: {game_name}")
         # record information
 
         '''new free games notify'''
@@ -167,10 +163,20 @@ def process_steamdb_result(steamdb_result):
             free_type_enum = GameFreeType.KEEP_FOREVER
             if free_type.lower() == "Weekend".lower():
                 free_type_enum = GameFreeType.LIMITED_TIME
-            notify(__name__, GamePlatform.STEAM, game_name, sub_id, steam_url, free_type_enum, start_datetime,
-                   end_datetime, steamdb_url, "!addlicense asf " + sub_id)
+            notify(
+                __name__,
+                GamePlatform.STEAM,
+                game_name,
+                sub_id,
+                steam_url,
+                free_type_enum,
+                start_datetime,
+                end_datetime,
+                steamdb_url,
+                f"!addlicense asf {sub_id}",
+            )
     # refresh the record
-    if len(game_records) > 0:
+    if game_records:
         logger.info("Writing records...")
         save_game_records_to_db(game_records)
     else:

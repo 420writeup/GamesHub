@@ -4,7 +4,7 @@ import logging
 PROJECT_NAME = "GamesHub"
 GITHUB_URL = "https://github.com/lupohan44/GamesHub"
 GITHUB_VERSION_URL = "https://raw.githubusercontent.com/lupohan44/GamesHub/main/version.py"
-GITHUB_MIRROR_VERSION_URL = "https://ghproxy.com/" + GITHUB_VERSION_URL
+GITHUB_MIRROR_VERSION_URL = f"https://ghproxy.com/{GITHUB_VERSION_URL}"
 CONFIG_PATH = "config.json5"
 
 # log format

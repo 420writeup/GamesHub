@@ -65,9 +65,7 @@ def get_game_record_from_db(source_url):
     if db.is_closed():
         db.connect()
     game = GameRecord.select().where(GameRecord.source_url == source_url)
-    if len(game) != 0:
-        return game
-    return None
+    return game if len(game) != 0 else None
 
 
 class Config:
@@ -90,8 +88,7 @@ def get_url(url):
     req = request.Request(url, headers=headers)
     response = request.urlopen(req)
     html = response.read().decode('utf-8')
-    soup = BeautifulSoup(html, 'lxml')
-    return soup
+    return BeautifulSoup(html, 'lxml')
 
 
 def verify_cookies():
@@ -104,9 +101,7 @@ def verify_cookies():
     if len(username) == 0:
         return False
     username = username[0].text
-    if username != "":
-        return True
-    return False
+    return username != ""
 
 
 def get_main_post_content(soup):
@@ -133,9 +128,7 @@ def get_post_id(soup, index):
             # id begin with post_
             if div.attrs['id'].startswith('post_'):
                 post_ids.append(div.attrs['id'][5:])
-    if len(post_ids) > index:
-        return post_ids[index]
-    return None
+    return post_ids[index] if len(post_ids) > index else None
 
 
 def process_keylol_result(soup):
@@ -205,7 +198,7 @@ def say_thank_you(keylol_url):
                               data=parse.urlencode(data).encode('utf-8'), headers=headers)
         request.urlopen(req)
     except Exception as e:
-        logger.error('Failed to say thank you to {}'.format(keylol_url))
+        logger.error(f'Failed to say thank you to {keylol_url}')
         logger.error(e)
 
 
@@ -228,7 +221,9 @@ def process_keylol_steam_free_game_information(source_url, soup):
     # if the game type is dlc, sometimes thread author will provide game url as well
     final_app_info = {}
     for app_id in app_ids:
-        response = requests.get('https://store.steampowered.com/api/appdetails?appids=' + app_id)
+        response = requests.get(
+            f'https://store.steampowered.com/api/appdetails?appids={app_id}'
+        )
         response_json = response.json()
         if app_id in response_json and 'success' in response_json[app_id] and response_json[app_id]['success']:
             data = response_json[app_id]['data']
@@ -248,7 +243,7 @@ def process_keylol_steam_free_game_information(source_url, soup):
                     'app_id': app_id,
                     'sub_id': sub_id,
                     'name': data['name'],
-                    'url': 'https://store.steampowered.com/app/' + app_id,
+                    'url': f'https://store.steampowered.com/app/{app_id}',
                 }
             elif 'type' in data and data['type'] == 'dlc':
                 final_app_info = {
@@ -256,7 +251,7 @@ def process_keylol_steam_free_game_information(source_url, soup):
                     'app_id': app_id,
                     'sub_id': sub_id,
                     'name': data['name'],
-                    'url': 'https://store.steampowered.com/app/' + app_id,
+                    'url': f'https://store.steampowered.com/app/{app_id}',
                 }
                 break
     if len(final_app_info) == 0:

@@ -6,14 +6,13 @@ import json5
 
 def center_format_text(text: str = '', fill_char: str = '#'):
     width = shutil.get_terminal_size().columns - 1
-    if width > 80:
-        width = 80
-    if len(text) == 0:
+    width = min(width, 80)
+    if not text:
         return fill_char * width
     if text[0] != ' ':
-        text = ' ' + text
+        text = f' {text}'
     if text[-1] != ' ':
-        text = text + ' '
+        text += ' '
     return text.center(width, fill_char)
 
 
